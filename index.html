@@ -409,6 +409,9 @@
     </div>
   </div>
   <div class="products-grid" id="productsGrid"></div>
+  <div id="verMasContainer" style="text-align: center; margin-top: 3rem; display: none;">
+    <button id="verMasBtn" class="btn-outline" style="margin: 0 auto; display: inline-flex;">Ver todos los productos</button>
+  </div>
 </section>
 <!-- NOSOTROS -->
 <section id="nosotros">
@@ -728,33 +731,55 @@ var products = [
 ];
 var filter = "todos";
 var search = "";
+var showAllProducts = false;
 function catLabel(c){return{apliques:"Apliques",paneles:"Paneles LED",tiras:"Tiras y Neon LED",colgantes:"Colgantes",exterior:"Exterior",veladores:"Veladores",ventiladores:"Ventiladores",lamparas:"Lamparas y Tubos",sensores:"Sensores",fuentes:"Fuentes",accesorios:"Accesorios"}[c]||c;}
 function render(){
   var g=document.getElementById("productsGrid");
   var f=products.filter(function(p){
     return (filter==="todos"||p.cat===filter)&&(!search||p.name.toLowerCase().indexOf(search)>-1||p.desc.toLowerCase().indexOf(search)>-1);
   });
-  if(!f.length){g.innerHTML='<div class="no-results"><div style="font-size:3rem;opacity:0.4;">&#128269;</div><div>No encontramos productos que coincidan.</div></div>';return;}
+  
+  var limit = 8;
+  var isLimited = !showAllProducts && f.length > limit;
+  var displayProducts = isLimited ? f.slice(0, limit) : f;
+
+  var verMasContainer = document.getElementById("verMasContainer");
+  if(verMasContainer) verMasContainer.style.display = isLimited ? "block" : "none";
+
+  if(!displayProducts.length){g.innerHTML='<div class="no-results"><div style="font-size:3rem;opacity:0.4;">&#128269;</div><div>No encontramos productos que coincidan.</div></div>';return;}
   var h="";
-  for(var i=0;i<f.length;i++){
-    var p=f[i];
+  for(var i=0;i<displayProducts.length;i++){
+    var p=displayProducts[i];
     var link="https://wa.me/"+WA+"?text="+encodeURIComponent("Hola, quiero consultar por: "+p.msg);
     var badge=p.badge?'<div class="product-badge">'+p.badge+"</div>":"";
     h+='<div class="product-card"><div class="product-img"><div class="product-img-inner">'+p.emoji+"</div>"+badge+'</div><div class="product-info"><div class="product-category">'+catLabel(p.cat)+'</div><div class="product-name">'+p.name+'</div><div class="product-desc">'+p.desc+'</div><div class="product-footer"><a href="'+link+'" target="_blank" class="btn-wa-product">&#128172; Consultar precio</a></div></div></div>';
   }
   g.innerHTML=h;
+  
+  if(isLimited) {
+    document.getElementById("verMasBtn").innerText = "Ver los " + f.length + " productos";
+  }
 }
 render();
+var verMasBtn = document.getElementById("verMasBtn");
+if(verMasBtn) {
+  verMasBtn.addEventListener("click", function() {
+    showAllProducts = true;
+    render();
+  });
+}
 document.querySelectorAll(".chip").forEach(function(c){
   c.addEventListener("click",function(){
     document.querySelectorAll(".chip").forEach(function(x){x.classList.remove("active");});
     c.classList.add("active");
     filter=c.getAttribute("data-filter");
+    showAllProducts = false;
     render();
   });
 });
 document.getElementById("searchInput").addEventListener("input",function(e){
   search=e.target.value.toLowerCase().trim();
+  showAllProducts = false;
   render();
 });
 window.addEventListener("scroll",function(){
